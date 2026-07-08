@@ -1,5 +1,3 @@
-
-
 const express = require('express');
 const http = require('http');
 const socketIo = require('socket.io');
@@ -7,7 +5,7 @@ const socketIo = require('socket.io');
 const app = express();
 const server = http.createServer(app);
 
-// Configure CORS for local testing
+// Configure CORS cleanly for production and local development
 const io = socketIo(server, {
   cors: {
     origin: '*', 
@@ -18,9 +16,7 @@ const io = socketIo(server, {
 // In-memory data structure to track room capacities
 const roomSizes = new Map(); 
 
-/**
- * Helper to generate a secure, short room ID
- */
+// Helper to generate a secure, short room ID
 const generateRoomId = () => {
   return Math.random().toString(36).substring(2, 10).toUpperCase();
 };
@@ -59,9 +55,9 @@ io.on('connection', (socket) => {
 
     socket.join(roomId);
     
-    // Gather existing peers to establish connections
-    const peerIds = Array.from(io.sockets.sockets.keys())
-      .filter(id => io.sockets.sockets.get(id).rooms.has(roomId));
+    // Gather existing peers to establish connections (excluding yourself)
+    const peerIds = Array.from(io.sockets.adapter.rooms.get(roomId) || [])
+      .filter(id => id !== socket.id);
     
     // Send existing users to the new joiner
     socket.emit('usersInRoom', peerIds);
@@ -82,12 +78,15 @@ io.on('connection', (socket) => {
     console.log(`[ROOM] Client ${socket.id} left room ${roomId}`);
   });
 
-  // --- PEER EXIT DETECTION (Unexpected Disconnect) ---
-  socket.on('disconnect', () => {
+  // --- PEER EXIT DETECTION  ---
+  socket.on('disconnecting', () => {
     const rooms = Array.from(socket.rooms).filter(room => room !== socket.id);
     rooms.forEach(roomId => {
       socket.to(roomId).emit('userLeft', { peerId: socket.id, roomId });
     });
+  });
+
+  socket.on('disconnect', () => {
     console.log(`[SYS] Client disconnected: ${socket.id}`);
   });
 });
