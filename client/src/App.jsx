@@ -2,7 +2,10 @@ import { useState, useEffect, useRef } from 'react';
 import io from 'socket.io-client';
 import CryptoJS from 'crypto-js';
 
-const socket = io(`${import.meta.env.VITE_API_URL}`);
+const socket = io(`${import.meta.env.VITE_API_URL}`, {
+  transports: ['websocket'],
+  upgrade: false
+});
 
 function App() {
   const [roomId, setRoomId] = useState('');

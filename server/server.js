@@ -3,6 +3,11 @@ const http = require('http');
 const socketIo = require('socket.io');
 
 const app = express();
+
+app.get('/', (req, res) => {
+  res.status(200).send('Signaling server is healthy and operational.');
+});
+
 const server = http.createServer(app);
 
 // Configure CORS cleanly for production and local development
@@ -92,6 +97,6 @@ io.on('connection', (socket) => {
 });
 
 const PORT = process.env.PORT || 5000;
-server.listen(PORT, () => {
+server.listen(PORT, '0.0.0.0', () => {
   console.log(`ShareMesh Signaling Server running on port ${PORT}`);
 });
